@@ -52,7 +52,7 @@ log "Delegating to generic RDNA tuner with AMD Radeon AI PRO R9700 defaults..."
 #                           so they override the above defaults
 exec "$RDNA_SCRIPT" \
     --memory-clock 1350 \
-    --undervolt-offset -75 \
+    --undervolt-offset -80 \
     --tdp 210 \
     --fan-curve "25 25 50 25 70 30 85 30 100 35" \
     "$@"
