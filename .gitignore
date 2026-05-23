@@ -1,0 +1,26 @@
+# Debian packages
+*.deb
+
+# Compiled llama.cpp build outputs
+llm/llama.cpp-rocm/
+llm/llama.cpp-vulkan/
+
+# llama.cpp source tree (cloned separately)
+llm/llama.cpp-src/
+
+# Python virtual environment
+llm/rocm-venv/
+
+# VS Code workspace settings (optional: remove to share settings)
+.vscode/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Benchmark result logs (contain absolute paths)
+benchmark/results/
+
+# Logs and temp files
+*.log
+*.tmp
