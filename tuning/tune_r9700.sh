@@ -54,6 +54,6 @@ exec "$RDNA_SCRIPT" \
     --gpus all \
     --memory-clock 1350 \
     --undervolt-offset -80 \
-    --tdp 210 \
-    --fan-curve "25 25 50 25 70 30 85 30 100 35" \
+    --tdp 300 \
+    --fan-curve "25 25 50 25 70 30 85 40 100 50" \
     "$@"

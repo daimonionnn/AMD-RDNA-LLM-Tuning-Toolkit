@@ -160,7 +160,7 @@ LD_LIBRARY_PATH=llm/rocm-venv/lib \
   benchmark/run_llm_benchmark_rocm.sh
 ```
 
-> **Note:** `HIP_VISIBLE_DEVICES=0` is set in the script to target the discrete R9700 (gfx1201) and avoid the integrated Cezanne Vega iGPU.
+> **Note:** The script auto-discovers all discrete RDNA GPUs and sets `HIP_VISIBLE_DEVICES` accordingly, excluding the integrated Cezanne iGPU. Use `--gpus 1`, `--gpus 0,1`, or `--gpus 0000:03:00.0` (or env-var `RDNA_GPUS=...`) to override. With more than one GPU selected, per-GPU passes plus a combined pass are run; add `--no-per-gpu-sweep` to skip the individual passes.
 
 ## Results
 

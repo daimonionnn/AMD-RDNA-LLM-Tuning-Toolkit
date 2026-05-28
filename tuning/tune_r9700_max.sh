@@ -35,6 +35,8 @@ done
 
 log "Delegating to generic RDNA tuner with AMD Radeon AI PRO R9700 defaults..."
 # Default values chosen for the R9700 (Navi 48 / gfx1201):
+#   --gpus all            : apply to every detected R9700; override with
+#                           --gpus 1 or --gpus 0,1 (later --gpus wins)
 #   --memory-clock 1350   : max MCLK in MHz; the driver default is higher but
 #                           causes instability on this chip
 #   --undervolt-offset -75: VDDGFX core voltage offset in mV; reduces heat and
@@ -51,7 +53,8 @@ log "Delegating to generic RDNA tuner with AMD Radeon AI PRO R9700 defaults..."
 #   "$@"                  : any flags passed by the caller are forwarded last,
 #                           so they override the above defaults
 exec "$RDNA_SCRIPT" \
+    --gpus all \
     --memory-clock 1350 \
-    --undervolt-offset -80 \
+    --undervolt-offset -75 \
     --tdp 300 \
     "$@"

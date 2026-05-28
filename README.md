@@ -46,6 +46,56 @@ Target a specific card:
 sudo ./tuning/tune_r9700.sh --pci-id 0000:07:00.0
 ```
 
+## Multi-GPU support (1..N RDNA cards)
+
+> **Running two R9700s on a B450 / Cezanne ITX system?** Read
+> [docs/dual-gpu-bifurcation-notes.md](docs/dual-gpu-bifurcation-notes.md)
+> first — there are real PCIe bifurcation quirks (broken `x8/x8` mode,
+> Gen1-x4 link training on the secondary slot) documented there.
+
+Every script in `tuning/`, `llm/` and `benchmark/` accepts a unified `--gpus`
+selector for choosing which RDNA GPUs to act on. The selector understands
+several forms — pick whichever is most convenient:
+
+| Form | Meaning |
+|------|---------|
+| `--gpus all` *(default)* | Every detected discrete RDNA GPU |
+| `--gpus 1` | First RDNA GPU only (PCI-BDF order) |
+| `--gpus 2` | First N RDNA GPUs |
+| `--gpus 0,2` | Specific RDNA indices (zero-based, iGPU excluded) |
+| `--gpus 0000:03:00.0,0000:0f:00.0` | Explicit PCI BDFs (most robust) |
+
+Environment-variable fallback: `export RDNA_GPUS=...` is used when `--gpus`
+is not passed (handy for systemd units and the `tune_r9700-tune.service`).
+
+The shared helper `lib/rdna_detect.sh` detects discrete RDNA cards by:
+
+1. Filtering PCI vendor `0x1002` devices driven by the `amdgpu` kernel module.
+2. Requiring at least 4 GiB of dedicated VRAM (excludes integrated GPUs like
+   Cezanne/Renoir, which only carve out a small system-RAM region).
+3. Sorting deterministically by PCI BDF, so "RDNA index 0" means the same
+   thing across the tuning, ROCm and Vulkan scripts.
+
+For the benchmarks (`benchmark/run_llm_benchmark_*.sh`), selecting more than
+one GPU runs **per-GPU passes followed by a combined multi-GPU pass** so you
+can compare scaling. Use `--no-per-gpu-sweep` to skip the individual passes.
+
+Examples:
+
+```bash
+# Tune both R9700s with the max-performance profile
+sudo ./tuning/tune_r9700_max.sh
+
+# Tune only the second R9700
+sudo ./tuning/tune_r9700_max.sh --gpus 1
+
+# Run ROCm inference using both R9700s (layer-split by llama.cpp)
+./llm/run_inference_rocm.sh --gpus all ~/models/some-model.gguf
+
+# Benchmark just the first card, ROCm
+./benchmark/run_llm_benchmark_rocm.sh --gpus 0
+```
+
 Dry run:
 
 ```bash

@@ -1,0 +1,15 @@
+[Unit]
+Description=Force PCIe root port 00:02.4 to retrain at higher link speed (R9700 #2)
+# Run after PCI subsystem is up and amdgpu has bound the devices.
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/matt/development/AMD-RDNA-LLM-Tuning-Toolkit/tuning/force_pcie_link.sh
+RemainAfterExit=yes
+# Don't fail the boot if the retrain doesn't reach the target speed.
+SuccessExitStatus=0
+
+[Install]
+WantedBy=multi-user.target

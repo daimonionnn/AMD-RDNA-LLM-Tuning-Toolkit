@@ -283,3 +283,163 @@ gml_cuda_init: found 1 ROCm devices (Total VRAM: 32624 MiB):
 | qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |           tg128 |         28.23 ± 0.05 |
 
 
+-----------------------------------------------------------------------------------------------------------------------------
+## Dual-GPU PCIe Bifurcation Benchmarks
+   GPU 0 (0000:03:00.0): R9700 at PCIe Gen3 x8
+   GPU 1 (0000:0f:00.0): R9700 at PCIe Gen1 x4
+   Tune preset: /tunning/tune_r9700_max.sh (memory-clock 1350, undervolt-offset -120mV, tdp 300W)
+   PCIe ASPM: performance
+   Performance level: auto
+   llama.cpp build: a9883db8e (9127)
+-----------------------------------------------------------------------------------------------------------------------------
+
+
+### Pass 1 — Solo GPU 0 (0000:03:00.0, Gen3 x8)
+
+----------------------------------------------------------
+ Benchmarking Model: Qwen3.6-27B-Q4_K_M.gguf
+----------------------------------------------------------
+Command: llm/llama.cpp-rocm/bin/llama-bench -m ~/.lmstudio/models/lmstudio-community/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf -ngl 99 -fa 1 -p 1024,4096,32768 -n 128
+Env: HIP_VISIBLE_DEVICES=0
+
+ggml_cuda_init: found 1 ROCm devices (Total VRAM: 32624 MiB):
+  Device 0: AMD Radeon AI PRO R9700, gfx1201 (0x1201), VMM: no, Wave Size: 32, VRAM: 32624 MiB
+| model                          |       size |     params | backend    | ngl | fa |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | -: | --------------: | -------------------: |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp1024 |       1109.86 ± 1.04 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp4096 |       1041.80 ± 3.69 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |         pp32768 |        695.83 ± 0.94 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |           tg128 |         28.71 ± 0.06 |
+
+
+### Pass 2 — Solo GPU 1 (0000:0f:00.0, Gen1 x4)
+
+----------------------------------------------------------
+ Benchmarking Model: Qwen3.6-27B-Q4_K_M.gguf
+----------------------------------------------------------
+Command: llm/llama.cpp-rocm/bin/llama-bench -m ~/.lmstudio/models/lmstudio-community/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf -ngl 99 -fa 1 -p 1024,4096,32768 -n 128
+Env: HIP_VISIBLE_DEVICES=1
+
+ggml_cuda_init: found 1 ROCm devices (Total VRAM: 32624 MiB):
+  Device 0: AMD Radeon AI PRO R9700, gfx1201 (0x1201), VMM: no, Wave Size: 32, VRAM: 32624 MiB
+| model                          |       size |     params | backend    | ngl | fa |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | -: | --------------: | -------------------: |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp1024 |       1064.77 ± 2.46 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp4096 |        993.76 ± 4.34 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |         pp32768 |        598.86 ± 14.52 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |           tg128 |         27.75 ± 0.04 |
+
+
+### Pass 3 — Combined Dual GPU (0000:03:00.0 Gen3 x8 + 0000:0f:00.0 Gen1 x4)
+
+----------------------------------------------------------
+ Benchmarking Model: Qwen3.6-27B-Q4_K_M.gguf
+----------------------------------------------------------
+Command: llm/llama.cpp-rocm/bin/llama-bench -m ~/.lmstudio/models/lmstudio-community/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf -ngl 99 -fa 1 -p 1024,4096,32768 -n 128
+Env: HIP_VISIBLE_DEVICES=0,1
+
+ggml_cuda_init: found 2 ROCm devices (Total VRAM: 65248 MiB):
+  Device 0: AMD Radeon AI PRO R9700, gfx1201 (0x1201), VMM: no, Wave Size: 32, VRAM: 32624 MiB
+  Device 1: AMD Radeon AI PRO R9700, gfx1201 (0x1201), VMM: no, Wave Size: 32, VRAM: 32624 MiB
+| model                          |       size |     params | backend    | ngl | fa |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | -: | --------------: | -------------------: |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp1024 |       1265.70 ± 1.24 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp4096 |       1604.70 ± 1.41 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |         pp32768 |       1153.24 ± 3.53 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |           tg128 |         24.67 ± 0.05 |
+
+
+#### Observations
+- The Gen1 x4 GPU (0f:00.0) shows a modest single-GPU penalty vs the Gen3 x8 GPU (03:00.0): ~4% lower pp1024, ~4.5% lower pp4096, ~14% lower pp32768, ~3% lower tg128 — confirming PCIe bandwidth chiefly impacts long-context prompt processing while small-context PP and TG remain mostly compute-bound.
+- Combined dual-GPU PP scales positively at mid/long contexts (pp4096 ≈ 1.54× Gen3-solo, pp32768 ≈ 1.66× Gen3-solo) despite the asymmetric link widths, indicating tensor-split work overlaps PCIe transfers effectively.
+- Combined TG is ~14% lower than Gen3-solo (24.67 vs 28.71 t/s) — typical for split single-batch decode where the slower link gates per-token sync.
+
+
+-----------------------------------------------------------------------------------------------------------------------------
+## Dual-GPU PCIe Bifurcation Benchmarks — after `setpci` retrain to Gen2 x4
+   GPU 0 (0000:03:00.0): R9700 at PCIe Gen3 x8 (unchanged)
+   GPU 1 (0000:0f:00.0): R9700 at **PCIe Gen2 x4** (was Gen1 x4 — see ../tuning/force_pcie_link.sh and ../docs/dual-gpu-bifurcation-notes.md)
+   Tune preset: /tunning/tune_r9700_max.sh (memory-clock 1350, undervolt-offset -120mV, tdp 300W)
+   PCIe ASPM: performance
+   Performance level: auto
+   llama.cpp build: a9883db8e (9127)
+-----------------------------------------------------------------------------------------------------------------------------
+
+
+### Pass 1 — Solo GPU 0 (0000:03:00.0, Gen3 x8)
+
+----------------------------------------------------------
+ Benchmarking Model: Qwen3.6-27B-Q4_K_M.gguf
+----------------------------------------------------------
+Command: llm/llama.cpp-rocm/bin/llama-bench -m ~/.lmstudio/models/lmstudio-community/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf -ngl 99 -fa 1 -p 1024,4096,32768 -n 128
+Env: HIP_VISIBLE_DEVICES=0
+
+ggml_cuda_init: found 1 ROCm devices (Total VRAM: 32624 MiB):
+  Device 0: AMD Radeon AI PRO R9700, gfx1201 (0x1201), VMM: no, Wave Size: 32, VRAM: 32624 MiB
+| model                          |       size |     params | backend    | ngl | fa |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | -: | --------------: | -------------------: |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp1024 |       1113.00 ± 0.53 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp4096 |       1047.48 ± 2.74 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |         pp32768 |        666.27 ± 12.28 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |           tg128 |         28.45 ± 0.03 |
+
+
+### Pass 2 — Solo GPU 1 (0000:0f:00.0, **Gen2 x4** after setpci retrain)
+
+----------------------------------------------------------
+ Benchmarking Model: Qwen3.6-27B-Q4_K_M.gguf
+----------------------------------------------------------
+Command: llm/llama.cpp-rocm/bin/llama-bench -m ~/.lmstudio/models/lmstudio-community/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf -ngl 99 -fa 1 -p 1024,4096,32768 -n 128
+Env: HIP_VISIBLE_DEVICES=1
+
+ggml_cuda_init: found 1 ROCm devices (Total VRAM: 32624 MiB):
+  Device 0: AMD Radeon AI PRO R9700, gfx1201 (0x1201), VMM: no, Wave Size: 32, VRAM: 32624 MiB
+| model                          |       size |     params | backend    | ngl | fa |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | -: | --------------: | -------------------: |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp1024 |       1089.43 ± 1.83 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp4096 |       1027.64 ± 3.54 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |         pp32768 |        641.03 ± 11.94 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |           tg128 |         28.04 ± 0.12 |
+
+
+### Pass 3 — Combined Dual GPU (0000:03:00.0 Gen3 x8 + 0000:0f:00.0 **Gen2 x4**)
+
+----------------------------------------------------------
+ Benchmarking Model: Qwen3.6-27B-Q4_K_M.gguf
+----------------------------------------------------------
+Command: llm/llama.cpp-rocm/bin/llama-bench -m ~/.lmstudio/models/lmstudio-community/Qwen3.6-27B-GGUF/Qwen3.6-27B-Q4_K_M.gguf -ngl 99 -fa 1 -p 1024,4096,32768 -n 128
+Env: HIP_VISIBLE_DEVICES=0,1
+
+ggml_cuda_init: found 2 ROCm devices (Total VRAM: 65248 MiB):
+  Device 0: AMD Radeon AI PRO R9700, gfx1201 (0x1201), VMM: no, Wave Size: 32, VRAM: 32624 MiB
+  Device 1: AMD Radeon AI PRO R9700, gfx1201 (0x1201), VMM: no, Wave Size: 32, VRAM: 32624 MiB
+| model                          |       size |     params | backend    | ngl | fa |            test |                  t/s |
+| ------------------------------ | ---------: | ---------: | ---------- | --: | -: | --------------: | -------------------: |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp1024 |       1300.77 ± 1.01 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |          pp4096 |       1682.51 ± 2.52 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |         pp32768 |       1210.40 ± 9.58 |
+| qwen35 27B Q4_K - Medium       |  15.40 GiB |    26.90 B | ROCm       |  99 |  1 |           tg128 |         24.00 ± 0.04 |
+
+
+#### Observations — Gen2 x4 vs Gen1 x4 on GPU 1
+
+| Test     | Solo GPU 1 Gen1 x4 | Solo GPU 1 **Gen2 x4** | Δ vs Gen1 | Gap to Gen3 x8 (GPU 0) |
+|----------|--------------------:|------------------------:|----------:|------------------------:|
+| pp1024   |         1064.77 t/s |             1089.43 t/s |    +2.3 % |                  −2.1 % |
+| pp4096   |          993.76 t/s |             1027.64 t/s |    +3.4 % |                  −1.9 % |
+| pp32768  |          598.86 t/s |              641.03 t/s |    +7.0 % |                  −3.8 % |
+| tg128    |           27.75 t/s |               28.04 t/s |    +1.0 % |                  −1.4 % |
+
+| Test     | Combined Gen3+**Gen1** | Combined Gen3+**Gen2** | Δ      | vs Solo Gen3 (GPU 0)  |
+|----------|------------------------:|------------------------:|-------:|----------------------:|
+| pp1024   |             1265.70 t/s |             1300.77 t/s | +2.8 % |                 1.17× |
+| pp4096   |             1604.70 t/s |             1682.51 t/s | +4.8 % |                 1.61× |
+| pp32768  |             1153.24 t/s |             1210.40 t/s | +5.0 % |                 1.82× |
+| tg128    |               24.67 t/s |               24.00 t/s | −2.7 % |               −15.6 % |
+
+- **Solo penalty on GPU 1 nearly eliminated.** After the Gen2 retrain, the gap to the Gen3 x8 GPU collapses from ~4–14 % to ~2–4 % across all PP contexts and to ~1 % on TG. The remaining gap at pp32768 (−3.8 %) is consistent with Gen2 x4 still being half the bandwidth of Gen3 x8 — long-context PP is the only test where that gap stays visible.
+- **Combined PP scaling improved at every context length** (+3 % at pp1024, +5 % at pp4096/pp32768). Most striking: pp32768 dual-GPU now reaches **1.82× solo Gen3** (up from 1.66× before), so the asymmetric-link tax on tensor-split long-context prompt processing is largely paid off.
+- **Combined TG dipped slightly (24.67 → 24.00 t/s, −2.7 %).** Run-to-run variance is plausible, but a real small regression isn't implausible either: with the slower link sped up, ROCm may now schedule more per-token cross-GPU traffic than before. Still well within the expected single-batch split-decode penalty vs solo Gen3.
+- **Bottom line:** the `setpci` retrain converts GPU 1 from a clearly-handicapped second-class member into a near-peer of the Gen3 x8 GPU for inference. PP throughput is now the headline win; TG is essentially flat.
+
+

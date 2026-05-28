@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/rdna_detect.sh
+source "$SCRIPT_DIR/../lib/rdna_detect.sh"
+
 PCI_ID=""
+GPUS_SELECTOR="${RDNA_GPUS:-}"
 MEMORY_CLOCK_MHZ=""
 UNDERVOLT_OFFSET_MV=""
 TDP_WATTS=""
@@ -22,8 +27,14 @@ Usage: sudo ./$SCRIPT_NAME [options]
 Tune an AMD Radeon Navi GPU through the amdgpu sysfs interface.
 
 Options:
-  --pci-id ID             PCI ID in the form 0000:XX:YY.Z.
-                          Default: auto-detect the first AMD display device.
+  --gpus SELECTOR         Which RDNA GPUs to act on. Forms:
+                            all              every detected RDNA GPU (default)
+                            N                first N RDNA GPUs (PCI-BDF order)
+                            i,j,k            specific RDNA indices (zero-based)
+                            BDF[,BDF...]     explicit PCI BDFs, e.g. 0000:03:00.0
+                          Env-var fallback: RDNA_GPUS=<selector>
+  --pci-id ID             Shorthand for --gpus <BDF>. PCI ID in the form
+                          0000:XX:YY.Z. Mutually exclusive with --gpus.
   --memory-clock MHz      Set max memory clock. Default: unchanged
   --undervolt-offset mV   Set VDDGFX offset. Default: unchanged
   --tdp watts             Set board power cap in watts. Default: unchanged
@@ -39,7 +50,9 @@ Options:
   -h, --help              Show this help message
 
 Examples:
-  sudo ./$SCRIPT_NAME
+  sudo ./$SCRIPT_NAME                              # tune ALL detected RDNA GPUs
+  sudo ./$SCRIPT_NAME --gpus 1                     # tune only the first one
+  sudo ./$SCRIPT_NAME --gpus 0,2 --tdp 200         # tune RDNA indices 0 and 2
   sudo ./$SCRIPT_NAME --pci-id 0000:07:00.0 --core-clock-max 2550
   sudo ./$SCRIPT_NAME --status
 
@@ -223,6 +236,11 @@ show_status() {
 parse_args() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
+            --gpus)
+                [[ $# -ge 2 ]] || die "--gpus requires a value"
+                GPUS_SELECTOR="$2"
+                shift 2
+                ;;
             --pci-id)
                 [[ $# -ge 2 ]] || die "--pci-id requires a value"
                 PCI_ID="$2"
@@ -285,17 +303,8 @@ parse_args() {
     done
 }
 
-main() {
-    parse_args "$@"
-    reexec_as_root_if_needed "$@"
-
-    need_cmd lspci
-    need_cmd find
-    need_cmd grep
-    need_cmd sed
-    need_cmd awk
-
-    [[ -n "$PCI_ID" ]] || PCI_ID="$(auto_detect_pci_id)"
+apply_to_gpu() {
+    local PCI_ID="$1"
     validate_pci_id "$PCI_ID"
 
     if [[ -n "$MEMORY_CLOCK_MHZ" ]]; then require_integer "$MEMORY_CLOCK_MHZ" "memory clock"; fi
@@ -499,6 +508,47 @@ main() {
 
     printf '\n'
     show_status "$PCI_ID" "$card_name" "$card_path" "$hwmon_dir"
+}
+
+main() {
+    parse_args "$@"
+    reexec_as_root_if_needed "$@"
+
+    need_cmd lspci
+    need_cmd find
+    need_cmd grep
+    need_cmd sed
+    need_cmd awk
+
+    if [[ -n "$PCI_ID" && -n "$GPUS_SELECTOR" ]]; then
+        die "--pci-id and --gpus are mutually exclusive"
+    fi
+
+    local -a targets=()
+    if [[ -n "$PCI_ID" ]]; then
+        validate_pci_id "$PCI_ID"
+        targets=("$PCI_ID")
+    else
+        # Default to "all" when nothing is specified.
+        local selector="${GPUS_SELECTOR:-all}"
+        mapfile -t targets < <(rdna_resolve_selector "$selector") \
+            || die "Failed to resolve --gpus selector '$selector'"
+    fi
+
+    if (( ${#targets[@]} == 0 )); then
+        die "No GPUs selected."
+    fi
+
+    log "Selected ${#targets[@]} GPU(s): ${targets[*]}"
+
+    local idx=0 bdf
+    for bdf in "${targets[@]}"; do
+        idx=$((idx + 1))
+        printf '\n==========================================================\n'
+        printf ' GPU %d/%d: %s\n' "$idx" "${#targets[@]}" "$bdf"
+        printf '==========================================================\n'
+        apply_to_gpu "$bdf"
+    done
 }
 
 main "$@"
